@@ -1,4 +1,4 @@
-// redis_registry_api.rs
+// registry_api.rs
 use rocket::http::Status;
 use rocket::response::status;
 use rocket::serde::json::{Json, Value as JsonValue};
@@ -37,7 +37,7 @@ pub struct ErrorResponse {
         schemas(ErrorResponse)
     ),
     tags(
-        (name = "redis", description = "Redis Registry API")
+        (name = "registry", description = "Registry API")
     )
 )]
 pub struct ApiDoc;
@@ -49,8 +49,8 @@ pub struct ApiDoc;
 /// Set a value for the specified key path
 #[utoipa::path(
     post,
-    path = "/redis/set",
-    tag = "redis",
+    path = "/registry/set",
+    tag = "registry",
     params(
         ("path" = Option<String>, Query, description = "Key path as a string (can be empty or nested using forward slashes like 'a/b/c')")
     ),
@@ -87,8 +87,8 @@ pub async fn set_handler(_api_key: ApiKey, registry: &State<AsyncRegistry>, path
 /// Get a value by its key path
 #[utoipa::path(
     get,
-    path = "/redis/get",
-    tag = "redis",
+    path = "/registry/get",
+    tag = "registry",
     params(
         ("path" = Option<String>, Query, description = "Key path as a string (can be empty or nested using forward slashes like 'a/b/c')")
     ),
@@ -129,8 +129,8 @@ pub async fn get_handler(_api_key: ApiKey, registry: &State<AsyncRegistry>, path
 /// Delete a key by its path
 #[utoipa::path(
     delete,
-    path = "/redis/delete",
-    tag = "redis",
+    path = "/registry/delete",
+    tag = "registry",
     params(
         ("path" = Option<String>, Query, description = "Key path as a string (can be empty or nested using forward slashes like 'a/b/c')")
     ),
@@ -171,8 +171,8 @@ pub async fn delete_handler(_api_key: ApiKey, registry: &State<AsyncRegistry>, p
 /// Purge all keys with the specified prefix
 #[utoipa::path(
     post,
-    path = "/redis/purge",
-    tag = "redis",
+    path = "/registry/purge",
+    tag = "registry",
     params(
         ("path" = Option<String>, Query, description = "Key path prefix as a string (can be empty or nested using forward slashes like 'a/b/c')")
     ),
@@ -208,8 +208,8 @@ pub async fn purge_handler(_api_key: ApiKey, registry: &State<AsyncRegistry>, pa
 /// Get list of keys with the specified prefix
 #[utoipa::path(
     get,
-    path = "/redis/scan",
-    tag = "redis",
+    path = "/registry/scan",
+    tag = "registry",
     params(
         ("path" = Option<String>, Query, description = "Key path prefix as a string (can be empty or nested using forward slashes like 'a/b/c')")
     ),
@@ -246,8 +246,8 @@ pub async fn scan_handler(_api_key: ApiKey, registry: &State<AsyncRegistry>, pat
 /// Dump all keys and values with the specified prefix
 #[utoipa::path(
     get,
-    path = "/redis/dump",
-    tag = "redis",
+    path = "/registry/dump",
+    tag = "registry",
     params(
         ("path" = Option<String>, Query, description = "Key path prefix as a string (can be empty or nested using forward slashes like 'a/b/c')")
     ),
@@ -287,8 +287,8 @@ pub async fn dump_handler(_api_key: ApiKey, registry: &State<AsyncRegistry>, pat
 /// Restore data from JSON dump
 #[utoipa::path(
     post,
-    path = "/redis/restore",
-    tag = "redis",
+    path = "/registry/restore",
+    tag = "registry",
     params(
         ("path" = Option<String>, Query, description = "Key path prefix as a string (can be empty or nested using forward slashes like 'a/b/c')")
     ),
@@ -355,5 +355,5 @@ pub fn routes() -> Vec<Route> {
 // Function to mount API routes
 pub fn mount_routes(rocket: rocket::Rocket<rocket::Build>) -> rocket::Rocket<rocket::Build> {
     // Regular API routes
-    rocket.mount("/redis", routes())
+    rocket.mount("/registry", routes())
 }
