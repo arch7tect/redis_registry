@@ -88,9 +88,9 @@ impl RedisRegistry {
     }
 
     /// Get a Redis connection
-    async fn get_connection(&self) -> RedisResult<redis::aio::Connection> {
+    async fn get_connection(&self) -> RedisResult<redis::aio::MultiplexedConnection> {
         trace!("Getting Redis connection");
-        match self.client.get_async_connection().await {
+        match self.client.get_multiplexed_async_connection().await {
             Ok(conn) => {
                 trace!("Redis connection acquired");
                 Ok(conn)
@@ -414,7 +414,7 @@ impl RedisRegistry {
         // MSET all of them in one round trip
         match redis::cmd("MSET")
             .arg(&args)
-            .query_async::<_, ()>(&mut conn)
+            .query_async::<()>(&mut conn)  // Fixed: only one generic type parameter
             .await {
             Ok(_) => {
                 info!("Successfully restored {} keys", args.len() / 2);
