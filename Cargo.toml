@@ -8,6 +8,14 @@ rocket = { version = "0.5.0", features = ["json"] }
 redis = { version = "0.22.0", features = ["tokio-comp", "aio"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-rocket_okapi = { version = "0.8.0", features = ["swagger"] }
-okapi = "0.7.0"
 tokio = { version = "1", features = ["full"] }
+dotenv = "0.15"
+
+# API docs
+utoipa = "5.3.1"
+utoipa-swagger-ui = { version = "9.0.0", features = ["rocket"] }
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+tracing-appender = "0.2"
