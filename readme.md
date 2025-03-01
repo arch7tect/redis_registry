@@ -1,4 +1,4 @@
-# Redis Registry API
+# Registry API
 
 A simple, hierarchical key-value store built on top of Redis with a RESTful API interface. This service allows you to store, retrieve, and manage JSON values using path-based keys.
 
@@ -21,8 +21,8 @@ A simple, hierarchical key-value store built on top of Redis with a RESTful API 
 
 1. Clone the repository
    ```
-   git clone https://github.com/arch7tect/redis_registry.git
-   cd redis_registry
+   git clone https://github.com/arch7tect/registry_api.git
+   cd registry_api
    ```
 
 2. Configure environment variables (create a `.env` file):
@@ -61,20 +61,20 @@ All endpoints support using the `?path=` query parameter to specify key paths. P
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/redis/get?path=...` | Get a JSON value by key path |
-| POST | `/redis/set?path=...` | Set a JSON value for key path |
-| DELETE | `/redis/delete?path=...` | Delete a key by path |
-| POST | `/redis/purge?path=...` | Delete all keys with the specified prefix |
-| GET | `/redis/scan?path=...` | List all keys with the specified prefix |
-| GET | `/redis/dump?path=...` | Dump all keys and values with the specified prefix |
-| POST | `/redis/restore?path=...` | Restore data from a JSON dump |
+| GET | `/registry/get?path=...` | Get a JSON value by key path |
+| POST | `/registry/set?path=...` | Set a JSON value for key path |
+| DELETE | `/registry/delete?path=...` | Delete a key by path |
+| POST | `/registry/purge?path=...` | Delete all keys with the specified prefix |
+| GET | `/registry/scan?path=...` | List all keys with the specified prefix |
+| GET | `/registry/dump?path=...` | Dump all keys and values with the specified prefix |
+| POST | `/registry/restore?path=...` | Restore data from a JSON dump |
 
 ### Examples
 
 #### Store a value
 
 ```
-POST /redis/set?path=users/john
+POST /registry/set?path=users/john
 Content-Type: application/json
 
 {
@@ -87,13 +87,13 @@ Content-Type: application/json
 #### Retrieve a value
 
 ```
-GET /redis/get?path=users/john
+GET /registry/get?path=users/john
 ```
 
 #### List all user keys
 
 ```
-GET /redis/scan?path=users
+GET /registry/scan?path=users
 ```
 
 ## Swagger UI
@@ -135,7 +135,7 @@ All values are stored as JSON strings in Redis. The API handles serialization an
 
 ## Logging
 
-The Redis Registry includes comprehensive logging capabilities:
+The Registry API includes comprehensive logging capabilities:
 
 ### Log Outputs
 
@@ -155,7 +155,7 @@ The Redis Registry includes comprehensive logging capabilities:
 Logs are stored in the configured `LOG_DIR` with daily rotation:
 ```
 logs/
-  └── redis-registry.YYYY-MM-DD
+  └── registry-api.YYYY-MM-DD
 ```
 
 ### Log Configuration

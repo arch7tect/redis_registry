@@ -66,7 +66,7 @@ fn setup_logging() -> io::Result<()> {
     std::fs::create_dir_all(&log_dir)?;
 
     // Configure file appender for rotating log files daily
-    let file_appender = rolling::daily(&log_dir, "redis-registry");
+    let file_appender = rolling::daily(&log_dir, "registry-api");
     let (non_blocking_appender, _guard) = non_blocking(file_appender);
 
     // Store the guard in a static to keep it alive for the duration of the program
