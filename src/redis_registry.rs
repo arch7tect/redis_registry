@@ -1,9 +1,9 @@
 // redis_registry.rs
 use redis::{AsyncCommands, Client, RedisError, RedisResult};
 use rocket::serde::json::Value as JsonValue;
+use serde_json::Value;
 use std::env;
 use std::sync::Arc;
-use serde_json::Value;
 // =======================================================
 // Redis Registry Core Implementation (Internal API)
 // =======================================================
@@ -39,7 +39,10 @@ fn string_to_value(value_str: &String) -> Result<Value, RedisError> {
 impl RedisRegistry {
     /// Create a new RedisRegistry instance using environment variables
     pub fn new(owner_type: &str, owner_id: &str) -> Result<Self, RedisError> {
-        debug!("Creating new RedisRegistry with owner_type={}, owner_id={}", owner_type, owner_id);
+        debug!(
+            "Creating new RedisRegistry with owner_type={}, owner_id={}",
+            owner_type, owner_id
+        );
 
         let redis_url = env::var("REDIS_URL").ok();
         let redis_host = env::var("REDIS_HOST").ok();
@@ -49,17 +52,23 @@ impl RedisRegistry {
             (Some(url), _, _) => {
                 debug!("Using REDIS_URL: {}", url);
                 url
-            },
+            }
             (_, Some(host), Some(port)) => {
                 let url = format!("redis://{}:{}", host, port);
-                debug!("Using constructed URL from REDIS_HOST and REDIS_PORT: {}", url);
+                debug!(
+                    "Using constructed URL from REDIS_HOST and REDIS_PORT: {}",
+                    url
+                );
                 url
-            },
+            }
             (_, Some(host), None) => {
                 let url = format!("redis://{}:6379", host);
-                debug!("Using constructed URL from REDIS_HOST with default port: {}", url);
+                debug!(
+                    "Using constructed URL from REDIS_HOST with default port: {}",
+                    url
+                );
                 url
-            },
+            }
             _ => {
                 error!("Redis connection information not provided");
                 return Err(RedisError::from(std::io::Error::new(
@@ -73,7 +82,7 @@ impl RedisRegistry {
             Ok(client) => {
                 info!("Successfully connected to Redis at {}", redis_url);
                 client
-            },
+            }
             Err(e) => {
                 error!("Failed to connect to Redis at {}: {}", redis_url, e);
                 return Err(e);
@@ -94,7 +103,7 @@ impl RedisRegistry {
             Ok(conn) => {
                 trace!("Redis connection acquired");
                 Ok(conn)
-            },
+            }
             Err(e) => {
                 error!("Failed to get Redis connection: {}", e);
                 Err(e)
@@ -109,7 +118,7 @@ impl RedisRegistry {
 
     /// Build a key from parts with the owner prefix: /<owner_type>/<owner_id>/<part1>/<part2>/...
     /// The owner_type and owner_id are hidden implementation details and not exposed to API users
-    fn build_key(&self, parts: &[&str]) -> String {
+    fn build_key(&self, parts: &Vec<String>) -> String {
         if parts.is_empty() {
             let key = self.get_owner_prefix();
             trace!("Built key (root): {}", key);
@@ -122,7 +131,7 @@ impl RedisRegistry {
     }
 
     /// Set a value for the specified key parts
-    pub async fn set(&self, parts: &[&str], value: JsonValue) -> RedisResult<()> {
+    pub async fn set(&self, parts: &Vec<String>, value: JsonValue) -> RedisResult<()> {
         let key = self.build_key(parts);
         info!("Setting value for key: {}", key);
 
@@ -142,12 +151,12 @@ impl RedisRegistry {
     }
 
     /// Get the value for the specified key parts
-    pub async fn get(&self, parts: &[&str]) -> RedisResult<Option<JsonValue>> {
+    pub async fn get(&self, parts: &Vec<String>) -> RedisResult<Option<JsonValue>> {
         let key = self.build_key(parts);
         info!("Getting value for key: {}", key);
 
         let mut conn = self.get_connection().await?;
-        let value_result: RedisResult<Option<String>> = conn.get(key.clone()).await;
+        let value_result: RedisResult<Option<String>> = conn.get(&key).await;
 
         match &value_result {
             Ok(Some(_)) => debug!("Redis GET operation successful for key: {}", key),
@@ -173,7 +182,7 @@ impl RedisRegistry {
     }
 
     /// Delete the key specified by parts
-    pub async fn delete(&self, parts: &[&str]) -> RedisResult<bool> {
+    pub async fn delete(&self, parts: &Vec<String>) -> RedisResult<bool> {
         let key = self.build_key(parts);
         info!("Deleting key: {}", key);
 
@@ -187,7 +196,7 @@ impl RedisRegistry {
                 } else {
                     debug!("Key not found for deletion: {}", key);
                 }
-            },
+            }
             Err(e) => error!("Redis DEL operation failed for key {}: {}", key, e),
         }
 
@@ -196,7 +205,7 @@ impl RedisRegistry {
     }
 
     /// Delete all keys that start with the specified parts
-    pub async fn purge(&self, parts: &[&str]) -> RedisResult<i64> {
+    pub async fn purge(&self, parts: &Vec<String>) -> RedisResult<i64> {
         info!("Purging keys with prefix: {:?}", parts);
 
         let mut conn = self.get_connection().await?;
@@ -214,23 +223,27 @@ impl RedisRegistry {
             return Ok(0);
         }
 
-        let full_keys: Vec<String> = keys.into_iter().map(|key| {
-            let mut new_parts = Vec::with_capacity(parts.len() + 1);
-            new_parts.extend_from_slice(parts);
-            new_parts.push(&key);
-            self.build_key(&new_parts)
-        }).collect();
+        let full_keys: Vec<String> = keys
+            .into_iter()
+            .map(|key| {
+                let mut new_parts = Vec::with_capacity(parts.len() + 1);
+                new_parts.extend_from_slice(parts);
+                new_parts.push(key);
+                self.build_key(&new_parts)
+            })
+            .collect();
 
         debug!("Purging keys: {:?}", full_keys);
 
         let deleted: i64 = match redis::cmd("DEL")
             .arg(&full_keys)
             .query_async(&mut conn)
-            .await {
+            .await
+        {
             Ok(d) => {
                 debug!("Redis DEL operation successful");
                 d
-            },
+            }
             Err(e) => {
                 error!("Redis DEL operation failed: {}", e);
                 return Err(e);
@@ -243,7 +256,7 @@ impl RedisRegistry {
 
     /// Get all keys that start with the specified parts, returning only the parts after the provided prefix
     /// The owner prefix (/<owner_type>/<owner_id>) is automatically included and hidden from results
-    pub async fn scan(&self, parts: &[&str]) -> RedisResult<Vec<String>> {
+    pub async fn scan(&self, parts: &Vec<String>) -> RedisResult<Vec<String>> {
         let prefix = format!("{}/", self.build_key(parts));
         let pattern = format!("{}*", prefix);
         info!("Scanning for keys with pattern: {}", pattern);
@@ -261,11 +274,12 @@ impl RedisRegistry {
                 .arg("MATCH")
                 .arg(&pattern)
                 .query_async(&mut conn)
-                .await {
+                .await
+            {
                 Ok(result) => {
                     trace!("SCAN successful");
                     result
-                },
+                }
                 Err(e) => {
                     error!("Redis SCAN operation failed: {}", e);
                     return Err(e);
@@ -290,23 +304,21 @@ impl RedisRegistry {
             }
         }
 
-        info!("Found {} keys matching pattern: {}", relative_keys.len(), pattern);
+        info!(
+            "Found {} keys matching pattern: {}",
+            relative_keys.len(),
+            pattern
+        );
         Ok(relative_keys)
     }
 
     /// Dump all keys and values that start with the specified parts as JSON
     /// Returns a JSON object where keys are the relative paths (after the provided prefix)
     /// The owner prefix (/<owner_type>/<owner_id>) is automatically included and hidden from results
-    pub async fn dump(&self, parts: &[&str]) -> RedisResult<JsonValue> {
+    pub async fn dump(&self, parts: &Vec<String>) -> RedisResult<JsonValue> {
         info!("Dumping keys with prefix: {:?}", parts);
 
-        let keys = match self.scan(parts).await {
-            Ok(k) => k,
-            Err(e) => {
-                error!("Failed to scan keys for dump operation: {}", e);
-                return Err(e);
-            }
-        };
+        let keys = self.scan(parts).await?;
 
         info!("Found {} keys to dump", keys.len());
 
@@ -320,7 +332,7 @@ impl RedisRegistry {
             .map(|key| {
                 let mut new_parts = Vec::with_capacity(parts.len() + 1);
                 new_parts.extend_from_slice(parts);
-                new_parts.push(key);
+                new_parts.push(key.clone());
                 self.build_key(&new_parts)
             })
             .collect();
@@ -331,11 +343,12 @@ impl RedisRegistry {
         let values: Vec<Option<String>> = match redis::cmd("MGET")
             .arg(&full_keys)
             .query_async(&mut conn)
-            .await {
+            .await
+        {
             Ok(v) => {
                 debug!("Redis MGET operation successful");
                 v
-            },
+            }
             Err(e) => {
                 error!("Redis MGET operation failed: {}", e);
                 return Err(e);
@@ -349,7 +362,7 @@ impl RedisRegistry {
                     Ok(json_value) => {
                         trace!("Adding key to dump result: {}", relative_key);
                         result.insert(relative_key, json_value);
-                    },
+                    }
                     Err(e) => {
                         error!("Failed to deserialize JSON for key {}: {}", relative_key, e);
                         return Err(e);
@@ -366,22 +379,16 @@ impl RedisRegistry {
     /// The keys in the JSON are relative paths (after the provided prefix)
     /// These will be combined with the provided parts to form the full keys
     /// The owner prefix (/<owner_type>/<owner_id>) is automatically included
-    pub async fn restore(&self, parts: &[&str], json: JsonValue) -> RedisResult<i64> {
+    pub async fn restore(&self, parts: &Vec<String>, json: JsonValue) -> RedisResult<i64> {
         info!("Restoring data with prefix: {:?}", parts);
 
         let prefix = self.build_key(parts);
         let mut conn = self.get_connection().await?;
 
         // If not an object, no keys to restore
-        let map = match json {
-            JsonValue::Object(map) => {
-                debug!("JSON is an object with {} keys", map.len());
-                map
-            },
-            _ => {
-                warn!("JSON is not an object, nothing to restore");
-                return Ok(0);
-            }
+        let JsonValue::Object(map) = json else {
+            warn!("JSON is not an object, nothing to restore");
+            return Ok(0);
         };
 
         // Build up (key, value) pairs for MSET
@@ -412,18 +419,15 @@ impl RedisRegistry {
         debug!("Executing MSET for {} keys", args.len() / 2);
 
         // MSET all of them in one round trip
-        match redis::cmd("MSET")
+        if let Err(e) = redis::cmd("MSET")
             .arg(&args)
-            .query_async::<()>(&mut conn)  // Fixed: only one generic type parameter
-            .await {
-            Ok(_) => {
-                info!("Successfully restored {} keys", args.len() / 2);
-            },
-            Err(e) => {
-                error!("Redis MSET operation failed: {}", e);
-                return Err(e);
-            }
+            .query_async::<()>(&mut conn)
+            .await
+        {
+            error!("Redis MSET operation failed: {}", e);
+            return Err(e);
         };
+        info!("Successfully restored {} keys", args.len() / 2);
 
         // Each pair (full_key,value_str) is a single "set"
         Ok((args.len() as i64) / 2)
@@ -446,53 +450,45 @@ impl AsyncRegistry {
     pub fn new(config: &RegistryConfig) -> Result<Self, RedisError> {
         info!("Creating AsyncRegistry with config: {:?}", config);
 
-        let registry = match RedisRegistry::new(&config.owner_type, &config.owner_id) {
-            Ok(r) => {
-                debug!("RedisRegistry created successfully");
-                r
-            },
-            Err(e) => {
-                error!("Failed to create RedisRegistry: {}", e);
-                return Err(e);
-            }
-        };
+        let registry= RedisRegistry::new(&config.owner_type, &config.owner_id)?;
+        debug!("RedisRegistry created successfully");
 
         Ok(AsyncRegistry {
             registry: Arc::new(registry),
         })
     }
 
-    pub async fn set(&self, parts: &[&str], value: JsonValue) -> RedisResult<()> {
+    pub async fn set(&self, parts: &Vec<String>, value: JsonValue) -> RedisResult<()> {
         trace!("AsyncRegistry::set called with parts: {:?}", parts);
         self.registry.set(parts, value).await
     }
 
-    pub async fn get(&self, parts: &[&str]) -> RedisResult<Option<JsonValue>> {
+    pub async fn get(&self, parts: &Vec<String>) -> RedisResult<Option<JsonValue>> {
         trace!("AsyncRegistry::get called with parts: {:?}", parts);
         self.registry.get(parts).await
     }
 
-    pub async fn delete(&self, parts: &[&str]) -> RedisResult<bool> {
+    pub async fn delete(&self, parts: &Vec<String>) -> RedisResult<bool> {
         trace!("AsyncRegistry::delete called with parts: {:?}", parts);
         self.registry.delete(parts).await
     }
 
-    pub async fn purge(&self, parts: &[&str]) -> RedisResult<i64> {
+    pub async fn purge(&self, parts: &Vec<String>) -> RedisResult<i64> {
         trace!("AsyncRegistry::purge called with parts: {:?}", parts);
         self.registry.purge(parts).await
     }
 
-    pub async fn scan(&self, parts: &[&str]) -> RedisResult<Vec<String>> {
+    pub async fn scan(&self, parts: &Vec<String>) -> RedisResult<Vec<String>> {
         trace!("AsyncRegistry::scan called with parts: {:?}", parts);
         self.registry.scan(parts).await
     }
 
-    pub async fn dump(&self, parts: &[&str]) -> RedisResult<JsonValue> {
+    pub async fn dump(&self, parts: &Vec<String>) -> RedisResult<JsonValue> {
         trace!("AsyncRegistry::dump called with parts: {:?}", parts);
         self.registry.dump(parts).await
     }
 
-    pub async fn restore(&self, parts: &[&str], json: JsonValue) -> RedisResult<i64> {
+    pub async fn restore(&self, parts: &Vec<String>, json: JsonValue) -> RedisResult<i64> {
         trace!("AsyncRegistry::restore called with parts: {:?}", parts);
         self.registry.restore(parts, json).await
     }

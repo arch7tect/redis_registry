@@ -68,11 +68,9 @@ pub async fn set_handler(_api_key: ApiKey, registry: &State<AsyncRegistry>, path
     let span = info_span!("set_handler", path = ?path);
     let _guard = span.enter();
 
-    let parts = path_to_parts(path.clone());
-    // Convert Vec<String> to Vec<&str> for the registry functions
-    let parts_str: Vec<&str> = parts.iter().map(|s| s.as_str()).collect();
+    let parts = path_to_parts(&path);
 
-    match registry.set(&parts_str, value.into_inner()).await {
+    match registry.set(&parts, value.into_inner()).await {
         Ok(_) => {
             info!("Value set successfully for path: {:?}", path);
             Ok(status::Custom(Status::Ok, "OK".to_string()))
@@ -106,11 +104,9 @@ pub async fn get_handler(_api_key: ApiKey, registry: &State<AsyncRegistry>, path
     let span = info_span!("get_handler", path = ?path);
     let _guard = span.enter();
 
-    let parts = path_to_parts(path.clone());
-    // Convert Vec<String> to Vec<&str> for the registry functions
-    let parts_str: Vec<&str> = parts.iter().map(|s| s.as_str()).collect();
+    let parts = path_to_parts(&path);
 
-    match registry.get(&parts_str).await {
+    match registry.get(&parts).await {
         Ok(Some(value)) => {
             info!("Value found for path: {:?}", path);
             Ok(status::Custom(Status::Ok, Json(value)))
@@ -148,11 +144,9 @@ pub async fn delete_handler(_api_key: ApiKey, registry: &State<AsyncRegistry>, p
     let span = info_span!("delete_handler", path = ?path);
     let _guard = span.enter();
 
-    let parts = path_to_parts(path.clone());
-    // Convert Vec<String> to Vec<&str> for the registry functions
-    let parts_str: Vec<&str> = parts.iter().map(|s| s.as_str()).collect();
+    let parts = path_to_parts(&path);
 
-    match registry.delete(&parts_str).await {
+    match registry.delete(&parts).await {
         Ok(true) => {
             info!("Key deleted successfully for path: {:?}", path);
             Ok(status::Custom(Status::Ok, "OK".to_string()))
@@ -189,11 +183,9 @@ pub async fn purge_handler(_api_key: ApiKey, registry: &State<AsyncRegistry>, pa
     let span = info_span!("purge_handler", path = ?path);
     let _guard = span.enter();
 
-    let parts = path_to_parts(path.clone());
-    // Convert Vec<String> to Vec<&str> for the registry functions
-    let parts_str: Vec<&str> = parts.iter().map(|s| s.as_str()).collect();
+    let parts = path_to_parts(&path);
 
-    match registry.purge(&parts_str).await {
+    match registry.purge(&parts).await {
         Ok(count) => {
             info!("Purged {} keys with prefix: {:?}", count, path);
             Ok(status::Custom(Status::Ok, count.to_string()))
@@ -226,11 +218,9 @@ pub async fn scan_handler(_api_key: ApiKey, registry: &State<AsyncRegistry>, pat
     let span = info_span!("scan_handler", path = ?path);
     let _guard = span.enter();
 
-    let parts = path_to_parts(path.clone());
-    // Convert Vec<String> to Vec<&str> for the registry functions
-    let parts_str: Vec<&str> = parts.iter().map(|s| s.as_str()).collect();
+    let parts = path_to_parts(&path);
 
-    match registry.scan(&parts_str).await {
+    match registry.scan(&parts).await {
         Ok(keys) => {
             info!("Found {} keys with prefix: {:?}", keys.len(), path);
             debug!("Keys found: {:?}", keys);
@@ -264,11 +254,9 @@ pub async fn dump_handler(_api_key: ApiKey, registry: &State<AsyncRegistry>, pat
     let span = info_span!("dump_handler", path = ?path);
     let _guard = span.enter();
 
-    let parts = path_to_parts(path.clone());
-    // Convert Vec<String> to Vec<&str> for the registry functions
-    let parts_str: Vec<&str> = parts.iter().map(|s| s.as_str()).collect();
+    let parts = path_to_parts(&path);
 
-    match registry.dump(&parts_str).await {
+    match registry.dump(&parts).await {
         Ok(data) => {
             let count = match &data {
                 JsonValue::Object(map) => map.len(),
@@ -306,11 +294,9 @@ pub async fn restore_handler(_api_key: ApiKey, registry: &State<AsyncRegistry>, 
     let span = info_span!("restore_handler", path = ?path);
     let _guard = span.enter();
 
-    let parts = path_to_parts(path.clone());
-    // Convert Vec<String> to Vec<&str> for the registry functions
-    let parts_str: Vec<&str> = parts.iter().map(|s| s.as_str()).collect();
+    let parts = path_to_parts(&path);
 
-    match registry.restore(&parts_str, data.into_inner()).await {
+    match registry.restore(&parts, data.into_inner()).await {
         Ok(count) => {
             info!("Restored {} keys with prefix: {:?}", count, path);
             Ok(status::Custom(Status::Ok, count.to_string()))
@@ -323,7 +309,7 @@ pub async fn restore_handler(_api_key: ApiKey, registry: &State<AsyncRegistry>, 
 }
 
 // Helper function to convert path string to parts vector
-fn path_to_parts(path: Option<String>) -> Vec<String> {
+fn path_to_parts(path: &Option<String>) -> Vec<String> {
     match path {
         Some(p) if !p.trim().is_empty() => {
             p.split('/')
