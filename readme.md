@@ -14,7 +14,7 @@ A simple, hierarchical key-value store built on top of Redis with a RESTful API 
 
 ### Prerequisites
 
-- Rust (edition 2024)
+- Rust (edition 2021)
 - Redis server
 
 ### Setup
