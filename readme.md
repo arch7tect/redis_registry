@@ -1,4 +1,4 @@
-# Registry API
+# Redis Registry
 
 A simple, hierarchical key-value store built on top of Redis with a RESTful API interface. This service allows you to store, retrieve, and manage JSON values using path-based keys.
 
@@ -21,7 +21,7 @@ A simple, hierarchical key-value store built on top of Redis with a RESTful API 
 
 1. Clone the repository
    ```
-   git clone https://github.com/arch7tect/registry_api.git
+   git clone https://github.com/arch7tect/redis_registry.git
    cd registry_api
    ```
 
@@ -155,7 +155,7 @@ The Registry API includes comprehensive logging capabilities:
 Logs are stored in the configured `LOG_DIR` with daily rotation:
 ```
 logs/
-  └── registry-api.YYYY-MM-DD
+  └── redis_registry.YYYY-MM-DD
 ```
 
 ### Log Configuration
