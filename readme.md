@@ -165,15 +165,7 @@ You can configure logging using environment variables:
 - `RUST_LOG`: Sets the log level (trace, debug, info, warn, error)
 - `LOG_DIR`: Directory where log files will be stored
 
-## Development
-
-### Running Tests
-
-```
-cargo test
-```
-
-### Building Documentation
+## Building Documentation
 
 ```
 cargo doc --open
