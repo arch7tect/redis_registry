@@ -14,7 +14,7 @@ A simple, hierarchical key-value store built on top of Redis with a RESTful API 
 
 ### Prerequisites
 
-- Rust (edition 2021)
+- Rust 
 - Redis server
 
 ### Setup
@@ -22,7 +22,7 @@ A simple, hierarchical key-value store built on top of Redis with a RESTful API 
 1. Clone the repository
    ```
    git clone https://github.com/arch7tect/redis_registry.git
-   cd registry_api
+   cd redis_registry
    ```
 
 2. Configure environment variables (create a `.env` file):
